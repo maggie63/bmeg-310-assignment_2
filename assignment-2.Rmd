@@ -5,6 +5,10 @@ date: "2023-10-10"
 output: html_document
 ---
 
+### Setup
+
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -16,6 +20,9 @@ library(ROCR)
 ```
 
 ```{r, load data}
+# Set the seed
+set.seed(1)
+
 # Read data
 ovarian.data <- read.delim("ovarian.data", sep=",", header = FALSE)
 features <- c("perimeter", "area", "smoothness", "symmetry", "concavity", paste("protein", seq(1, 25), sep=""))
@@ -23,4 +30,35 @@ names(ovarian.data) <- c("cell_id", "diagnosis", features) # paste0(features,"_m
 
 dim(ovarian.data)
 head(ovarian.data)
+```
+
+### Q1. Dimensionality Reduction
+
+---
+
+```{r}
+```
+
+### Q2. Clustering
+
+---
+
+```{r}
+```
+
+### Q3. Classification
+
+---
+
+```{r}
+# Divide dataset into training and testing sets
+ovarian.data.train <- ovarian.data[sample(nrow(ovarian.data))[1:(nrow(ovarian.data)/2)],]
+ovarian.data.test <- ovarian.data[sample(nrow(ovarian.data))[(nrow(ovarian.data)/2):(nrow(ovarian.dataset))],]
+```
+
+```{r, ROC curve}
+pred.prob <- predict(your.model, ovarian.data, type="response")
+predict <- prediction(pred.prob, ovarian.data$diagnosis, label.ordering=c("B","M"))
+perform <- performance(predict,"tpr","fpr")
+plot(perform,colorize=TRUE)
 ```
