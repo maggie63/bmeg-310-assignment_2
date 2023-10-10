@@ -1,0 +1,26 @@
+---
+title: "Assignment 2"
+author: "Maggie Wang"
+date: "2023-10-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, load libraries}
+# Load required libraries
+library(ggplot2)
+library(ROCR)
+```
+
+```{r, load data}
+# Read data
+ovarian.data <- read.delim("ovarian.data", sep=",", header = FALSE)
+features <- c("perimeter", "area", "smoothness", "symmetry", "concavity", paste("protein", seq(1, 25), sep=""))
+names(ovarian.data) <- c("cell_id", "diagnosis", features) # paste0(features,"_mean"), paste0(features,"_se"), paste0(features,"_worst"))
+
+dim(ovarian.data)
+head(ovarian.data)
+```
