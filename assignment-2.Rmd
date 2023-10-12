@@ -2,7 +2,9 @@
 title: "Assignment 2"
 author: "Maggie Wang"
 date: "2023-10-10"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ### Setup
@@ -39,34 +41,42 @@ head(ovarian.data)
 
 **Q1.1**
 ```{r, Q1.1}
-ovarian.pca <- prcomp(ovarian.data[,c(3:7)], center = TRUE,scale. = TRUE)
+ovarian.pca <- prcomp(ovarian.data[,c(3:32)], center = TRUE,scale. = TRUE)
 summary(ovarian.pca)
 str(ovarian.pca)
-
-ggbiplot(ovarian.pca)
-ggbiplot(ovarian.pca,choices=c(3,4))
-ggbiplot(ovarian.pca, labels=rownames(ovarian.data))
 ```
+About 42.77% of the variation in the data is associated with PC1.
 
 **Q1.2**
-```{r, Q1.2}
-
-```
+To represent 90% of the variance in the data by dimensionality reduction, you would need about 9 PCs.
 
 **Q1.3**
 ```{r, Q1.3}
-
+q1.3_plot <- ggplot(ovarian.data, aes(x = area, y = perimeter)) +
+  geom_point(aes(color = diagnosis)) +
+  labs(title = "Area vs. Perimeter of Tumor", 
+       x = "Area",
+       y = "Perimeter", 
+       color = "Diagnosis")
+q1.3_plot
 ```
 
 **Q1.4**
 ```{r, Q1.4}
-
+q1.4_plot <- ggplot(ovarian.data, aes(x = area, y = concavity)) +
+  geom_point(aes(color = diagnosis)) +
+  labs(title = "Area vs. Concavity of Tumor", 
+       x = "Area",
+       y = "Concavity", 
+       color = "Diagnosis")
+q1.4_plot
 ```
 
 **Q1.5**
-```{r, Q1.5}
-
-```
+The first plot using the first two important PCs has more separation between the 
+classes, while in the second one they are a lot more mixed. This is because the
+first two PCs have the highest proportion of the variation in the dataset, so 
+they will have the most difference between them.
 
 **Q1.6**
 ```{r, Q1.6 (bonus)}
@@ -104,7 +114,7 @@ ggbiplot(ovarian.pca, labels=rownames(ovarian.data))
 ```{r}
 # Divide dataset into training and testing sets
 ovarian.data.train <- ovarian.data[sample(nrow(ovarian.data))[1:(nrow(ovarian.data)/2)],]
-ovarian.data.test <- ovarian.data[sample(nrow(ovarian.data))[(nrow(ovarian.data)/2):(nrow(ovarian.dataset))],]
+ovarian.data.test <- ovarian.data[sample(nrow(ovarian.data))[(nrow(ovarian.data)/2):(nrow(ovarian.data))],]
 ```
 
 **Q3.1**
