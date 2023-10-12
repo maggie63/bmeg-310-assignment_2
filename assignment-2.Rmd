@@ -25,7 +25,7 @@ library(ROCR)
 set.seed(1)
 
 # Read data
-ovarian.data <- read.delim("ovarian.data", sep=",", header = FALSE)
+ovarian.data <- na.omit(read.delim("ovarian.data", sep=",", header = FALSE))
 features <- c("perimeter", "area", "smoothness", "symmetry", "concavity", paste("protein", seq(1, 25), sep=""))
 names(ovarian.data) <- c("cell_id", "diagnosis", features) # paste0(features,"_mean"), paste0(features,"_se"), paste0(features,"_worst"))
 
@@ -39,7 +39,13 @@ head(ovarian.data)
 
 **Q1.1**
 ```{r, Q1.1}
+ovarian.pca <- prcomp(ovarian.data[,c(3:7)], center = TRUE,scale. = TRUE)
+summary(ovarian.pca)
+str(ovarian.pca)
 
+ggbiplot(ovarian.pca)
+ggbiplot(ovarian.pca,choices=c(3,4))
+ggbiplot(ovarian.pca, labels=rownames(ovarian.data))
 ```
 
 **Q1.2**
