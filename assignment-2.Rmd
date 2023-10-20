@@ -7,37 +7,36 @@ output:
   html_document: default
 ---
 
-### Setup
-
----
+## Setup
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, load libraries}
+```{r, load libraries, message = FALSE}
 # Load required libraries
 library(ggplot2)
 library(ggbiplot)
 library(ROCR)
+library(corrplot)
+library(ISLR)
+library(caret)
+library(randomForest)
 ```
 
-```{r, load data}
-# Set the seed
-set.seed(1)
-
+```{r, load data, results = FALSE}
 # Read data
 ovarian.data <- na.omit(read.delim("ovarian.data", sep=",", header = FALSE))
-features <- c("perimeter", "area", "smoothness", "symmetry", "concavity", paste("protein", seq(1, 25), sep=""))
-names(ovarian.data) <- c("cell_id", "diagnosis", features) # paste0(features,"_mean"), paste0(features,"_se"), paste0(features,"_worst"))
+features <- c("perimeter", "area", "smoothness", "symmetry", "concavity", 
+              paste("protein", seq(1, 25), sep=""))
+names(ovarian.data) <- c("cell_id", "diagnosis", features) 
+# paste0(features,"_mean"), paste0(features,"_se"), paste0(features,"_worst"))
 
 dim(ovarian.data)
 head(ovarian.data)
 ```
 
-### Q1. Dimensionality Reduction
-
----
+## Q1. Dimensionality Reduction
 
 **Q1.1**
 ```{r, Q1.1}
@@ -52,13 +51,13 @@ To represent 90% of the variance in the data by dimensionality reduction, you wo
 
 **Q1.3**
 ```{r, Q1.3}
-q1.3_plot <- ggplot(ovarian.data, aes(x = area, y = perimeter)) +
-  geom_point(aes(color = diagnosis)) +
-  labs(title = "Area vs. Perimeter of Tumor", 
-       x = "Area",
-       y = "Perimeter", 
-       color = "Diagnosis")
-q1.3_plot
+diagnosis <- ovarian.data[,2]
+
+ggbiplot(ovarian.pca, choices=c(1,2), ellipse=TRUE, groups=diagnosis) +
+  scale_color_manual(name="Diagnosis", values=c("pink", "turquoise")) +
+  scale_shape_manual(name="Variety", values=c(2)) +
+  geom_point(aes(colour=diagnosis), size = 0.01) +
+  theme(legend.direction ="horizontal",legend.position = "top")
 ```
 
 **Q1.4**
@@ -83,33 +82,58 @@ they will have the most difference between them.
 
 ```
 
-### Q2. Clustering
-
----
+## Q2. Clustering
 
 **Q2.1**
 ```{r, Q2.1}
+# Scaling the data
+ovarian.scaled <- scale(ovarian.data[,c(3:32)])
 
+# Set seed to get reproducible results
+set.seed(2)
+
+# Performing kmeans
+km.out <- kmeans(ovarian.scaled, centers = 2, iter.max = 1, nstart = 20)
+km.out$cluster <- ifelse(km.out$cluster == 1, "M", "B")
+table(ovarian.data$diagnosis, km.out$cluster)
+mean(ovarian.data$diagnosis == km.out$cluster)
 ```
+There is a good amount of concordance between the identified clusters and the true labels of the cell.
+371 benign cells were identified correctly while 14 were mislabelled as malignant.
+205 malignant cells were identified correctly while 35 were mislabelled as benign.
 
 **Q2.2**
 ```{r, Q2.2}
+accuracies <- numeric(10)
+
+# Repeat kmeans 10 times
+for(i in 1:10){
+  km.out <- kmeans(ovarian.scaled, centers = 2, iter.max = 10, nstart = 20)
+  km.out$cluster <- ifelse(km.out$cluster == 1, "M", "B")
+  accuracies[i] <- mean(ovarian.data$diagnosis == km.out$cluster)
+}
+
+mean(accuracies)
 
 ```
+The values change from run to run because the results of the kmeans algorithm is dependent on the initializtion of the centers, which is different each time.
 
 **Q2.3**
 ```{r, Q2.3}
+# Transform pca results to dataframe
+pca.data <- as.data.frame(ovarian.pca$x[,1:5])
 
+# Perform kmeans analysis
+km.out <- kmeans(pca.data, centers = 2, nstart = 20)
+km.out$cluster <- ifelse(km.out$cluster == 1, "M", "B")
+table(ovarian.data$diagnosis, km.out$cluster)
+mean(ovarian.data$diagnosis == km.out$cluster)
 ```
 
 **Q2.4**
-```{r, Q2.4}
 
-```
 
-### Q3. Classification
-
----
+## Q3. Classification
 
 ```{r}
 # Divide dataset into training and testing sets
@@ -118,28 +142,75 @@ ovarian.data.test <- ovarian.data[sample(nrow(ovarian.data))[(nrow(ovarian.data)
 ```
 
 **Q3.1**
-```{r, Q3.1}
+```{r}
+# Plot correlation between pairs of variables
+correlations <- cor(ovarian.data[,3:32])
+corrplot(correlations, method="circle")
+
+# Plot density distribution of each variable, separated by diagnosis
+x <- ovarian.data[,3:32]
+y <- as.factor(ovarian.data[,2])
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+featurePlot(x=x, y=y, plot="density", scales=scales)
+```
+```{r, Q3.1, warning=FALSE}
+# Change diagnosis column to factors
+ovarian.data.train$diagnosis <- as.factor(ovarian.data.train$diagnosis)
+
+# Logistic regression training model
+training.model <- glm(diagnosis ~. -cell_id, data = ovarian.data.train, family = binomial)
+
+# Predicting on testing model
+probabilities <- predict(training.model, ovarian.data.test, type = "response")
+predicted.diagnosis <- ifelse(probabilities > 0.5, "M", "B")
+prediction <- as.factor(predicted.diagnosis)
+actual <- as.factor(ovarian.data.test$diagnosis)
+
+# Confusion matrix
+table(prediction, actual)
+
+# To calculate accuracy, precision, recall
+accuracy <-mean(prediction == actual)
+precision <- posPredValue(prediction, actual, positive='M', negative = 'B')
+recall <- sensitivity(prediction, actual, positive="M")
+accuracy
+precision
+recall
 
 ```
 
 **Q3.2**
 ```{r, Q3.2}
+# Logistic regression training model using top 5 PCs
+pca.training.model <- glm(diagnosis ~ perimeter + area + smoothness + symmetry 
+                          + concavity, data = ovarian.data.train, family = binomial)
 
+# Predicting on testing set
+pca.probabilities <- predict(pca.training.model, ovarian.data.test, type = "response")
+pca.predicted.diagnosis <- ifelse(pca.probabilities > 0.5, "M", "B")
+pca.prediction <- as.factor(pca.predicted.diagnosis)
+
+# Confusion matrix
+table(pca.prediction, actual)
+
+# To calculate accuracy, precision, recall
+pca.accuracy <-mean(pca.prediction == actual)
+pca.precision <- posPredValue(pca.prediction, actual, positive='M', negative = 'B')
+pca.recall <- sensitivity(pca.prediction, actual, positive="M")
+pca.accuracy
+pca.precision
+pca.recall
 ```
 
 **Q3.3**
-```{r, Q3.3}
 
-```
 
 **Q3.4**
-```{r, Q3.4}
 
-```
 
 **Q3.5**
 ```{r, Q3.5, ROC curve}
-pred.prob <- predict(your.model, ovarian.data, type="response")
+pred.prob <- predict(training.model, ovarian.data, type="response")
 predict <- prediction(pred.prob, ovarian.data$diagnosis, label.ordering=c("B","M"))
 perform <- performance(predict,"tpr","fpr")
 plot(perform,colorize=TRUE)
@@ -147,10 +218,44 @@ plot(perform,colorize=TRUE)
 
 **Q3.6**
 ```{r, Q3.6}
+set.seed(123)
+
+# Split into training (70%) and testing (30%)
+chunk <- sample(nrow(ovarian.data), 0.7 * nrow(ovarian.data))
+rf.training <- ovarian.data[chunk, ]
+rf.testing <- ovarian.data[-chunk, ]
+
+# Random forest model
+rf.training$diagnosis <- as.factor(rf.training$diagnosis)
+ovarian.rf <- randomForest(diagnosis ~.-cell_id, rf.training)
+
+# Predicting on train set
+pred.train <- predict(ovarian.rf, rf.training, type = "class")
+
+# Checking classification accuracy
+table(pred.train, rf.training$diagnosis)
+
+# Predicting on Validation set
+pred.test <- predict(ovarian.rf, rf.testing, type = "class")
+
+# Checking classification accuracy
+mean(pred.test == rf.testing$diagnosis)                    
+table(pred.test, rf.testing$diagnosis)
+
+# Repeat with top 5 PCs
+
+# Random forest model
+pca.rf <- randomForest(diagnosis ~ perimeter + area + smoothness + symmetry 
+                          + concavity, rf.training)
+
+# Predicting on Validation set
+pca.pred.test <- predict(pca.rf, rf.testing, type = "class")
+
+# Checking classification accuracy
+mean(pca.pred.test == rf.testing$diagnosis)                    
+table(pca.pred.test, rf.testing$diagnosis)
 
 ```
 
-### Contributions
-
----
+## Contributions
 
