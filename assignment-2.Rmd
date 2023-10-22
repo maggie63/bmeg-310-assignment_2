@@ -222,6 +222,9 @@ predict <- prediction(pred.prob, ovarian.data$diagnosis, label.ordering=c("B","M
 perform <- performance(predict,"tpr","fpr")
 plot(perform,colorize=TRUE)
 ```
+  Given the above ROC curve, we can tell that there is very little overlap of the two classes. The curve is very close to the top left corner which indicates that the model does a good job at classifying the data into categories and that the model has very good separability.
+
+  The ROC curve provides a more comprehensive view of a model's performance by showing how sensitivity and specificity change with different classification thresholds, which can in turn be used to select an optimal cut-off value for the diagnostic test. It can also help with understanding of the separability of the classes through graphical visualization.
 
 **Q3.6**
 ```{r, Q3.6}
