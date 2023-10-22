@@ -1,6 +1,6 @@
 ---
 title: "Assignment 2"
-author: "Maggie Wang, Sogand Golshahian, Elias Krapf"
+author: "Maggie Wang (61851572), Sogand Golshahian (), Elias Krapf ()"
 date: "2023-10-10"
 output:
   pdf_document: default
@@ -268,4 +268,4 @@ table(pca.pred.test, rf.testing$diagnosis)
 ```
 
 ## Contributions
-
+All members contributed to coding and reviewing each other's work. Some written questions were worked on together, and the remaining ones divided among group members. The final assigment was reviewed by each group member before submitting.
