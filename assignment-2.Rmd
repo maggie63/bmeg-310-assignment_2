@@ -1,6 +1,6 @@
 ---
 title: "Assignment 2"
-author: "Maggie Wang"
+author: "Maggie Wang, Sogand Golshahian, Elias Krapf"
 date: "2023-10-10"
 output:
   pdf_document: default
@@ -57,7 +57,7 @@ ggbiplot(ovarian.pca, choices=c(1,2), ellipse=TRUE, groups=diagnosis) +
   scale_color_manual(name="Diagnosis", values=c("pink", "turquoise")) +
   scale_shape_manual(name="Variety", values=c(2)) +
   geom_point(aes(colour=diagnosis), size = 0.01) +
-  theme(legend.direction ="horizontal",legend.position = "top")
+  theme(legend.direction ="horizontal",legend.position = "right")
 ```
 
 **Q1.4**
@@ -72,10 +72,7 @@ q1.4_plot
 ```
 
 **Q1.5**
-The first plot using the first two important PCs has more separation between the 
-classes, while in the second one they are a lot more mixed. This is because the
-first two PCs have the highest proportion of the variation in the dataset, so 
-they will have the most difference between them.
+The first plot using the first two important PCs has two distinct groups, while in the second one they are a lot more mixed. This is because the first two PCs have the highest proportion of the variation in the dataset, so they will have the most difference between them.
 
 **Q1.6**
 ```{r, Q1.6 (bonus)}
@@ -90,7 +87,7 @@ they will have the most difference between them.
 ovarian.scaled <- scale(ovarian.data[,c(3:32)])
 
 # Set seed to get reproducible results
-set.seed(2)
+
 
 # Performing kmeans
 km.out <- kmeans(ovarian.scaled, centers = 2, iter.max = 1, nstart = 20)
@@ -99,8 +96,7 @@ table(ovarian.data$diagnosis, km.out$cluster)
 mean(ovarian.data$diagnosis == km.out$cluster)
 ```
 There is a good amount of concordance between the identified clusters and the true labels of the cell.
-371 benign cells were identified correctly while 14 were mislabelled as malignant.
-205 malignant cells were identified correctly while 35 were mislabelled as benign.
+The model had an accuracy of 92.16%.
 
 **Q2.2**
 ```{r, Q2.2}
@@ -128,10 +124,21 @@ km.out <- kmeans(pca.data, centers = 2, nstart = 20)
 km.out$cluster <- ifelse(km.out$cluster == 1, "M", "B")
 table(ovarian.data$diagnosis, km.out$cluster)
 mean(ovarian.data$diagnosis == km.out$cluster)
+
+# Perform kmeans analysis 10 times
+accuracies.pca <- numeric(10)
+
+for(i in 1:10){
+  km.out <- kmeans(pca.data, centers = 2, nstart = 20)
+  km.out$cluster <- ifelse(km.out$cluster == 1, "M", "B")
+  accuracies.pca[i] <- mean(ovarian.data$diagnosis == km.out$cluster)
+}
+
+mean(accuracies.pca)
 ```
 
 **Q2.4**
-
+The results from 2.3 were very slightly worse than 2.2. The highest average from 2.2 was 0.9216, while the highest from 2.3 was 0.9184. This is because the entire data set is used in 2.2 and most of the variance in the data is covered.
 
 ## Q3. Classification
 
